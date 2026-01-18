@@ -10,21 +10,24 @@ from app.api import summaries, crud
 
 def test_create_summary(test_app, monkeypatch):
     test_request_payload = {"url": "https://foo.bar"}
-    test_response_payload = {"id": 1, "url": "https://foo.bar/"}
+    # test_response_payload = {"id": 1, "url": "https://foo.bar/"}
 
     async def mock_post(payload):
         return 1
 
     monkeypatch.setattr(crud, "post", mock_post)
-    
+
     # ADD THIS LINE:
     from app.api import summaries
+
     monkeypatch.setattr(summaries, "generate_summary", lambda *args: None)
 
     response = test_app.post(
         "/summaries/",
         data=json.dumps(test_request_payload),
     )
+    assert response.status_code == 201
+
 
 def test_create_summaries_invalid_json(test_app):
     response = test_app.post("/summaries/", data=json.dumps({}))
@@ -67,7 +70,7 @@ def test_read_summary(test_app_with_db, monkeypatch):
     response_dict = response.json()
     assert response_dict["id"] == summary_id
     assert response_dict["url"] == "https://foo.bar/"
-    assert "summary" in response_dict 
+    assert "summary" in response_dict
     assert response_dict["created_at"]
 
 
