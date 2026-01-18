@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from app.api import summaries, crud
+from app.api import crud, summaries
 
 
 def test_create_summary(test_app, monkeypatch):
@@ -43,13 +43,10 @@ def test_create_summaries_invalid_json(test_app):
         ]
     }
 
-    response = test_app.post(
-        "/summaries/", data=json.dumps({"url": "invalid://url"})
-    )
+    response = test_app.post("/summaries/", data=json.dumps({"url": "invalid://url"}))
     assert response.status_code == 422
     assert (
-        response.json()["detail"][0]["msg"]
-        == "URL scheme should be 'http' or 'https'"
+        response.json()["detail"][0]["msg"] == "URL scheme should be 'http' or 'https'"
     )
 
 
@@ -251,6 +248,5 @@ def test_update_summary_invalid_url(test_app):
     )
     assert response.status_code == 422
     assert (
-        response.json()["detail"][0]["msg"]
-        == "URL scheme should be 'http' or 'https'"
+        response.json()["detail"][0]["msg"] == "URL scheme should be 'http' or 'https'"
     )

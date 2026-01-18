@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends
 
 from app.config import Settings, get_settings
 
-
 router = APIRouter()
 
 
