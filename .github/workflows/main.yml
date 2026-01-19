@@ -145,7 +145,7 @@ jobs:
               environment:
                 - ENVIRONMENT=prod
                 - TESTING=0
-                - DATABASE_URL=postgresql://postgres:${{ secrets.DB_PASSWORD }}@db:5432/fastapi_db
+                - DATABASE_URL=postgres://postgres:${{ secrets.DB_PASSWORD }}@db:5432/fastapi_db
                 - PORT=8000
               depends_on:
                 - db
