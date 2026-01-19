@@ -23,8 +23,7 @@ In this hands-on lab, you'll learn how to set up a local development environment
 
 ## Project Overview
 
-### What We're Building
-
+### Task Description
 A RESTful API service that:
 - Accepts URLs via POST requests
 - Extracts and summarizes the content from those URLs using NLP
@@ -88,10 +87,22 @@ text-summarization-serving
 ```
 
 ---
+## Step by Step Implementation
 
-## Docker Setup
+## Step 1: Environment Setup
+### 1.1 Update the environment
+```bash
+sudo apt update && sudo apt upgrade
+```
 
-### Docker Compose Configuration
+### 1.2 Clone the repository
+```bash
+git clone -b lab1 https://github.com/nakibworkspace/text-summarization-serving.git
+```
+
+## Step 2: Docker Setup
+
+### 2.1 Docker Compose Configuration
 
 The `docker-compose.yml` file orchestrates two services: the web application and the PostgreSQL database.
 
@@ -136,7 +147,7 @@ services:
 | `depends_on` | Ensures database starts before web service |
 | `expose: 5432` | Makes PostgreSQL available to linked containers |
 
-### Web Application Dockerfile
+### 2.2 Web Application Dockerfile
 
 **project/Dockerfile**
 ```dockerfile
@@ -179,7 +190,7 @@ ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 | `PYTHONDONTWRITEBYTECODE=1` | Prevents Python from writing `.pyc` files |
 | `PYTHONUNBUFFERED=1` | Ensures Python output is sent directly to terminal |
 
-### Container Entrypoint Script
+### 2.3 Container Entrypoint Script
 
 The entrypoint script ensures the database is ready before starting the application.
 
@@ -200,7 +211,7 @@ exec "$@"
 
 This script uses `netcat` to poll the database port until PostgreSQL is accepting connections, preventing race conditions during startup.
 
-### Docker Ignore File
+### 2.4 Docker Ignore File
 
 **project/.dockerignore**
 ```
@@ -212,9 +223,9 @@ Dockerfile.prod
 
 ---
 
-## Database Configuration
+## Step 3: Database Configuration
 
-### PostgreSQL Dockerfile
+### 3.1 PostgreSQL Dockerfile
 
 **project/db/Dockerfile**
 ```dockerfile
@@ -227,7 +238,7 @@ ADD create.sql /docker-entrypoint-initdb.d
 
 Files placed in `/docker-entrypoint-initdb.d` are automatically executed when the PostgreSQL container initializes.
 
-### Database Initialization Script
+### 3.2 Database Initialization Script
 
 **project/db/create.sql**
 ```sql
@@ -241,9 +252,9 @@ This creates two separate databases:
 
 ---
 
-## FastAPI Application Setup
+## Step 4: FastAPI Application Setup
 
-### Main Application Entry Point
+### 4.1 Main Application Entry Point
 
 **project/app/main.py**
 ```python
@@ -287,14 +298,12 @@ init_db(app)
 
 ---
 
-## Configuration Management
+## Step 5: Configuration Management
 
-### Settings with Pydantic
+### 5.1 Settings with Pydantic
 
 **project/app/config.py**
 ```python
-# project/app/config.py
-
 import logging
 from functools import lru_cache
 
@@ -331,15 +340,12 @@ Environment variables are automatically mapped to settings:
 
 ---
 
-## Database Integration with Tortoise ORM
+## Step 6: Database Integration with Tortoise ORM
 
-### Database Connection Setup
+### 6.1 Database Connection Setup
 
 **project/app/db.py**
 ```python
-# project/app/db.py
-
-
 import logging
 import os
 
@@ -396,7 +402,7 @@ if __name__ == "__main__":
 | `generate_schemas=False` | Disables auto-schema generation (using migrations instead) |
 | `add_exception_handlers=True` | Adds proper error handling for DB exceptions |
 
-### Aerich Migration Configuration
+### 6.2 Aerich Migration Configuration
 
 **project/pyproject.toml**
 ```toml
@@ -406,7 +412,7 @@ location = "./migrations"
 src_folder = "./."
 ```
 
-### Initial Migration
+### 6.3 Initial Migration
 
 **project/migrations/models/0_20211227001140_init.sql**
 ```python
@@ -436,14 +442,12 @@ async def downgrade(db: BaseDBAsyncClient) -> str:
 
 ---
 
-## Data Models
+## Step 7: Data Models
 
-### Tortoise ORM Model
+### 7.1 Tortoise ORM Model
 
 **project/app/models/tortoise.py**
 ```python
-# project/app/models/tortoise.py
-
 
 from tortoise import fields, models
 from tortoise.contrib.pydantic import pydantic_model_creator
@@ -472,12 +476,10 @@ SummarySchema = pydantic_model_creator(TextSummary)
 
 `pydantic_model_creator(TextSummary)` automatically generates a Pydantic schema from the Tortoise model for API responses.
 
-### Pydantic Schemas
+### 7.2 Pydantic Schemas
 
 **project/app/models/pydantic.py**
 ```python
-# project/app/models/pydantic.py
-
 
 from pydantic import AnyHttpUrl, BaseModel
 
@@ -506,13 +508,12 @@ class SummaryUpdatePayloadSchema(SummaryPayloadSchema):
 
 ---
 
-## RESTful API Routes
+## Step 8: RESTful API Routes
 
-### Health Check Endpoint
+### 8.1 Health Check Endpoint
 
 **project/app/api/ping.py**
 ```python
-# project/app/api/ping.py
 from fastapi import APIRouter, Depends
 
 from app.config import Settings, get_settings
@@ -534,12 +535,10 @@ This endpoint:
 - Shows the current environment configuration
 - Demonstrates FastAPI's dependency injection with `Depends(get_settings)`
 
-### CRUD Operations
+### 8.2 CRUD Operations
 
 **project/app/api/crud.py**
 ```python
-# project/app/api/crud.py
-
 
 from typing import List, Union
 
@@ -590,13 +589,10 @@ async def put(id: int, payload: SummaryUpdatePayloadSchema) -> Union[dict, None]
 | `delete()` | Delete a summary | Deletion count |
 | `put()` | Update a summary | Updated summary dict or None |
 
-### Summary API Endpoints
+### 8.3 Summary API Endpoints
 
 **project/app/api/summaries.py**
 ```python
-# project/app/api/summaries.py
-
-
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Path
@@ -682,9 +678,9 @@ async def update_summary(
 
 ---
 
-## Running the Application
+## Step 9: Running the Application
 
-### Dependencies
+### 9.1 Dependencies
 
 **project/requirements.txt**
 ```
@@ -713,40 +709,60 @@ pytest-xdist==3.6.1
 -r requirements.txt
 ```
 
-### Build and Run
+### 9.2 Build and Run
 
 ```bash
 # Build and start the containers
-docker-compose up -d --build
+docker compose up -d --build
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Apply database migrations
-docker-compose exec web aerich upgrade
+docker compose exec web aerich upgrade
+
+# Create tables if the migration fails
+docker compose exec web python app/db.py
+
+# Verify tables exist
+docker compose exec web-db psql -U postgres -c "\c web_dev" -c "\dt"
 ```
 
-### Run Tests
+### 9.3 Run Tests
 
 ```bash
 # Run all tests
-docker-compose exec web python -m pytest
+docker compose exec web python -m pytest
 
 # Run with coverage report
-docker-compose exec web python -m pytest --cov=app
+docker compose exec web python -m pytest --cov=app
 
 # Run tests in parallel
-docker-compose exec web python -m pytest -n auto
+docker compose exec web python -m pytest -n auto
 ```
 
-### Access the API
+### 9.4 Access the API
 
 - **API Base URL**: http://localhost:8004
 - **Health Check**: http://localhost:8004/ping
 - **Interactive Docs**: http://localhost:8004/docs
 - **OpenAPI Schema**: http://localhost:8004/openapi.json
 
-### Example API Usage
+### 9.5 Access the API UI
+
+- Create a Load Balancer using the IP of your VM
+```bash
+ip addr show wt0
+```
+
+Here we are using the port `8004` for FastAPI
+
+
+Access the Load Balancer
+
+**Output:**
+
+### 9.6 Example API Usage
 
 ```bash
 # Create a summary
@@ -768,6 +784,8 @@ curl -X PUT http://localhost:8004/summaries/1/ \
 # Delete a summary
 curl -X DELETE http://localhost:8004/summaries/1/
 ```
+**Output:**
+
 
 ---
 
