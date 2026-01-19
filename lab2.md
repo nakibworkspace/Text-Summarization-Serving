@@ -86,25 +86,6 @@ sudo apt update && sudo apt upgrade
 git clone -b lab2 https://github.com/nakibworkspace/text-summarization-serving.git
 ```
 
-### 1.3 Build the Image and Run
-```bash
-# Build and start the containers
-docker compose up -d --build
-
-# View logs
-docker compose logs -f
-
-# Apply database migrations
-docker compose exec web aerich upgrade
-
-# Create tables 
-docker compose exec web python app/db.py
-
-# Verify tables exist
-docker compose exec web-db psql -U postgres -c "\c web_dev" -c "\dt"
-```
-**Output:**
-
 
 ## Step 2: Text Summarization Logic
 
@@ -946,12 +927,19 @@ Use SSH to connect to your EC2 instance:
 ssh -i /path/to/your-key.pem ubuntu@your-public-ip
 ```
 
-Install Docker
+**Install Docker**
 ```bash
 sudo apt update
 sudo apt install docker.io docker-compose -y
 sudo usermod -aG docker ubuntu
 ``` 
+**Initialize the migration**
+```bash
+sudo docker-compose exec web rm -rf migrations
+sudo docker-compose exec web aerich init -t app.db.TORTOISE_ORM
+sudo docker-compose exec web aerich init-db
+```
+
 ### 8.3 Allow inbound traffic to port 8000:
 
 1. In the AWS Management Console, navigate to the EC2 dashboard.
