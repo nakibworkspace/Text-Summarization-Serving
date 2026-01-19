@@ -97,7 +97,7 @@ docker compose logs -f
 # Apply database migrations
 docker compose exec web aerich upgrade
 
-# Create tables if the migration fails
+# Create tables 
 docker compose exec web python app/db.py
 
 # Verify tables exist
@@ -906,55 +906,110 @@ docker-compose exec web python -m pytest -v
 ---
 
 ## Step 8: Configuring AWS for Deployment
+### 8.1 Setting Up VPC, Subnet, route-table, Internet-Gateway
+> Make sure the region is set to 'ap-southeast-1'
 
-### 8.1 Creating VPC
-
-**What is a VPC?**
-
-A Virtual Private Cloud (VPC) is an isolated virtual network within AWS where you can launch your resources. It provides complete control over your networking environment.
+1. Create a vpc named, e.g., `tdd-vpc` with IPv4 CIDR block 10.0.0.0/16
+2. Create a public subnet named `tdd-subnet` with IPv4 CIDR block 10.0.1.0/24
 
 
-*To be furnished*
+3. Create a route table named `tdd-route` and associate it with the public-subnet.
 
----
 
-### 8.2 Subnet Configuration
+4. Create an internet gateway named `tdd-igw` and attach it to the vpc (tdd-vpc).
 
-**What is a Subnet?**
+5. Edit routes of the router:
 
-A subnet is a range of IP addresses within your VPC. Subnets allow you to partition your network and control traffic flow.
+    Public Route Table(rt-public):
+    Add a route with destination 0.0.0.0/0 and target igw
 
-**Creating the Subnet**
+Resource Map
 
-*To be furnished*
 
----
+### 8.2 Launch EC2 Instance
 
-### 8.3 Internet Gateway (IGW)
+1. Choose an appropriate Amazon Machine Image (AMI), such as Ubuntu.
+2. Choose the vpc tdd-vpc that we have created earlier.
+3. Ensure that the instance is in the tdd-subnet.
+4. Choose an appropriate instance type, such as t2.micro
+5. Choose or create an appropriate key pair.
+6. Choose an appropriate security group, such as tdd-sg
 
-**What is an Internet Gateway?**
+**Connect to your EC2 instance:**
+Add necessary permissions
+```bash
+chmod 600 <path to your .pem>
+```
 
-An Internet Gateway enables communication between instances in your VPC and the internet. It provides a target for internet-routable traffic.
+Use SSH to connect to your EC2 instance:
+```bash
+ssh -i /path/to/your-key.pem ubuntu@your-public-ip
+```
 
-**Creating and Attaching the IGW**
+Install Docker
+```bash
+sudo apt update
+sudo apt install docker.io docker-compose -y
+sudo usermod -aG docker ubuntu
+``` 
+### 8.3 Allow inbound traffic to port 8000:
 
-*To be furnished*
+1. In the AWS Management Console, navigate to the EC2 dashboard.
+2. Select "Security Groups" from the left-hand menu.
+3. Find the security group associated with your EC2 instance.
+4. Edit the inbound rules to allow traffic on port 5000 from your desired IP ranges (e.g., 0.0.0.0/0 for all IPs, though this is not recommended for production. But for now it is ok).
 
----
 
-### 8.4 EC2 Instance Setup
+## Step 9: Deploying the Application
 
-**What is EC2?**
+### 9.1 Add these GitHub secrets (Settings → Secrets → Actions):
 
-Amazon Elastic Compute Cloud (EC2) provides scalable computing capacity in the AWS cloud. We'll use an EC2 instance to host our FastAPI application.
+| Secret Name     | Value Description                         |
+|-----------------|--------------------------------------------|
+| EC2_HOST        | Your EC2 public IP                         |
+| EC2_SSH_KEY     | Contents of your `.pem` file               |
+| DB_PASSWORD     | Any password for PostgreSQL                |
 
-**Launching the EC2 Instance**
 
-*To be furnished*
+### 9.2 Open EC2 security group ports:
 
-### 8.5 Deploying the Application
+* 22 (SSH)
+* 8000 (FastAPI app)
 
-*To be furnished*
+Push to GitHub — workflow runs automatically.
+
+
+## Troubleshooting
+### Database Migration Fails, doesn't create tables.
+Create table manually and verify
+
+```bash
+# Create tables 
+docker compose exec web python app/db.py
+
+# Verify tables exist
+docker compose exec web-db psql -U postgres -c "\c web_dev" -c "\dt"
+```
+
+### User not in docker group
+in EC2, run
+```bash
+sudo usermod -aG docker ubuntu
+```
+exit and then SSH back to check
+```bash
+docker ps
+```
+
+### EC2_SSH_KEY secret is malformed
+In GitHub Secrets, paste the ENTIRE key including:**
+```
+-----BEGIN RSA PRIVATE KEY-----
+...all the content...
+-----END RSA PRIVATE KEY-----
+```
+
+
 
 ---
 
