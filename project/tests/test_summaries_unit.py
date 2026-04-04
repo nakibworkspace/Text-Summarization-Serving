@@ -13,7 +13,7 @@ def test_create_summary(test_app, monkeypatch):
     test_request_payload = {"url": "https://foo.bar"}
     test_response_payload = {"id": 1, "url": "https://foo.bar/"}
 
-    async def mock_post(payload):
+    async def mock_post(payload, session):
         return 1
 
     monkeypatch.setattr(crud, "post", mock_post)
@@ -61,7 +61,7 @@ def test_read_summary(test_app, monkeypatch):
         "created_at": datetime.utcnow().isoformat(),
     }
 
-    async def mock_get(id):
+    async def mock_get(id, session):
         return test_data
 
     monkeypatch.setattr(crud, "get", mock_get)
@@ -72,7 +72,7 @@ def test_read_summary(test_app, monkeypatch):
 
 
 def test_read_summary_incorrect_id(test_app, monkeypatch):
-    async def mock_get(id):
+    async def mock_get(id, session):
         return None
 
     monkeypatch.setattr(crud, "get", mock_get)
@@ -98,7 +98,7 @@ def test_read_all_summaries(test_app, monkeypatch):
         },
     ]
 
-    async def mock_get_all():
+    async def mock_get_all(session):
         return test_data
 
     monkeypatch.setattr(crud, "get_all", mock_get_all)
@@ -109,7 +109,7 @@ def test_read_all_summaries(test_app, monkeypatch):
 
 
 def test_remove_summary(test_app, monkeypatch):
-    async def mock_get(id):
+    async def mock_get(id, session):
         return {
             "id": 1,
             "url": "https://foo.bar",
@@ -119,7 +119,7 @@ def test_remove_summary(test_app, monkeypatch):
 
     monkeypatch.setattr(crud, "get", mock_get)
 
-    async def mock_delete(id):
+    async def mock_delete(id, session):
         return id
 
     monkeypatch.setattr(crud, "delete", mock_delete)
@@ -130,7 +130,7 @@ def test_remove_summary(test_app, monkeypatch):
 
 
 def test_remove_summary_incorrect_id(test_app, monkeypatch):
-    async def mock_get(id):
+    async def mock_get(id, session):
         return None
 
     monkeypatch.setattr(crud, "get", mock_get)
@@ -149,7 +149,7 @@ def test_update_summary(test_app, monkeypatch):
         "created_at": datetime.utcnow().isoformat(),
     }
 
-    async def mock_put(id, payload):
+    async def mock_put(id, payload, session):
         return test_response_payload
 
     monkeypatch.setattr(crud, "put", mock_put)
@@ -222,7 +222,7 @@ def test_update_summary(test_app, monkeypatch):
 def test_update_summary_invalid(
     test_app, monkeypatch, summary_id, payload, status_code, detail
 ):
-    async def mock_put(id, payload):
+    async def mock_put(id, payload, session):
         return None
 
     monkeypatch.setattr(crud, "put", mock_put)
