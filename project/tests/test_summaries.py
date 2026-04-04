@@ -8,7 +8,7 @@ from app.api import crud, summaries
 def test_create_summary(test_app, monkeypatch):
     test_request_payload = {"url": "https://foo.bar"}
 
-    async def mock_post(payload):
+    async def mock_post(payload, session):
         return 1
 
     monkeypatch.setattr(crud, "post", mock_post)
