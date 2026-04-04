@@ -1,14 +1,11 @@
-# project/tests/conftest.py
-
-
 import os
-
 import pytest
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from starlette.testclient import TestClient
-from tortoise.contrib.fastapi import register_tortoise
 
-from app.config import Settings, get_settings
 from app.main import create_application
+from app.db import get_session, Base
+from app.config import get_settings, Settings
 
 
 def get_settings_override():
@@ -16,33 +13,32 @@ def get_settings_override():
 
 
 @pytest.fixture(scope="module")
-def test_app():
-    # set up
-    app = create_application()
-    app.dependency_overrides[get_settings] = get_settings_override
-    with TestClient(app) as test_client:
+async def test_db():
+    engine = create_async_engine(os.environ.get("DATABASE_TEST_URL"))
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
-        # testing
-        yield test_client
 
-    # tear down
+@pytest.fixture(scope="function")
+async def test_session(test_db):
+    async_session_maker = async_sessionmaker(
+        test_db, class_=AsyncSession, expire_on_commit=False
+    )
+    async with async_session_maker() as session:
+        yield session
 
 
 @pytest.fixture(scope="module")
 def test_app_with_db():
-    # set up
     app = create_application()
     app.dependency_overrides[get_settings] = get_settings_override
-    register_tortoise(
-        app,
-        db_url=os.environ.get("DATABASE_TEST_URL"),
-        modules={"models": ["app.models.tortoise"]},
-        generate_schemas=True,
-        add_exception_handlers=True,
-    )
+    
+    async def override_get_session():
+        # Use test database session
+        pass
+    
     with TestClient(app) as test_client:
-
-        # testing
         yield test_client
-
-    # tear down
